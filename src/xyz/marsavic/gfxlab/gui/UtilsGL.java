@@ -57,9 +57,9 @@ public class UtilsGL {
 	
 	
 	/**
-	 * Live profilers, but not a live collection.
-	 * The returned collection is immutable and contains only the profilers present at the moment of calling.
-	 */
+		* Live profilers, but not a live collection.
+		* The returned collection is immutable and contains only the profilers present at the moment of calling.
+		*/
 	public static Collection<Profiler> profilers() {
 		synchronized (profilers) {
 			return ImmutableList.copyOf(profilers);
@@ -246,10 +246,26 @@ public class UtilsGL {
 	public static RNG[] rngArray(int n) {
 		return rngArray(n, new RNG().nextLong());
 	}
-	
-	
+
+
+	/**
+		* Clamp a floating point value to the range [0, 255] and round to the
+		* nearest integer. Useful when converting normalized color components
+		* to 8-bit values as illustrated in the README.
+		*/
+	public static int clampToByte(double v) {
+		if (v < 0) {
+		return 0;
+		} else if (v > 255) {
+		return 255;
+		} else {
+		return (int) Math.round(v);
+		}
+	}
+
+
 	public static final ResourceManagerMap<Vector, Matrix<Color>> matricesColor = new ResourceManagerMap<>(
-			MatrixColor::new, (m, sz) -> ((MatrixColor) m).fillBlack()
+		MatrixColor::new, (m, sz) -> ((MatrixColor) m).fillBlack()
 	);
 	
 	public static final ResourceManagerMap<Vector, Matrix<Integer>> matricesInt = new ResourceManagerMap<>(
