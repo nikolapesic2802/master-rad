@@ -8,13 +8,13 @@ public record Light(
 		Vec3 p,
 		Color c
 ) {
-	
+
 	public static Light pc(Vec3 p, Color c) {
 		return new Light(p, c);
 	}
-	
+
 	public static Light p(Vec3 p) {
 		return pc(p, Color.WHITE);
 	}
-	
+
 }

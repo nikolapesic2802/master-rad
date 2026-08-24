@@ -10,11 +10,11 @@ public record TransformedCamera (
 		Camera source,
 		Transformation transformation
 ) implements Camera {
-	
+
 	@Override
 	public Ray exitingRay(Vector sensorPosition) {
 		Ray ray = source.exitingRay(sensorPosition);
 		return transformation.at(ray);
 	}
-	
+
 }

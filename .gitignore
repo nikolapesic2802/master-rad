@@ -1,2 +1,8 @@
-# Project exclude paths
 /out/
+/benchmarks/runs/
+/benchmarks/work/
+/lib/jcuda-native/
+/.idea/
+*.iml
+__pycache__/
+*.pyc

@@ -14,14 +14,14 @@ public record Affine (
 		double m20, double m21, double m22, double m23
 //               0,          0,          0,          1
 ) implements Transformation {
-	
+
 	public static Affine IDENTITY = new Affine(
 			1.0, 0.0, 0.0, 0.0,
 			0.0, 1.0, 0.0, 0.0,
 			0.0, 0.0, 1.0, 0.0
 	);
-	
-	
+
+
 	public static Affine unitVectors(Vec3 ex, Vec3 ey, Vec3 ez) {
 		return new Affine(
 				ex.x(), ey.x(), ez.x(), 0,
@@ -29,8 +29,8 @@ public record Affine (
 				ex.z(), ey.z(), ez.z(), 0
 		);
 	}
-	
-	
+
+
 	public Affine then(Affine t) {
 		return new Affine(
 				t.m00 * m00 + t.m01 * m10 + t.m02 * m20, t.m00 * m01 + t.m01 * m11 + t.m02 * m21, t.m00 * m02 + t.m01 * m12 + t.m02 * m22, t.m00 * m03 + t.m01 * m13 + t.m02 * m23 + t.m03,
@@ -38,8 +38,8 @@ public record Affine (
 				t.m20 * m00 + t.m21 * m10 + t.m22 * m20, t.m20 * m01 + t.m21 * m11 + t.m22 * m21, t.m20 * m02 + t.m21 * m12 + t.m22 * m22, t.m20 * m03 + t.m21 * m13 + t.m22 * m23 + t.m23
 		);
 	}
-	
-	
+
+
 	@Override
 	public Vec3 at(Vec3 v) {
 		return new Vec3(
@@ -48,8 +48,8 @@ public record Affine (
 				m20 * v.x() + m21 * v.y() + m22 * v.z() + m23
 		);
 	}
-	
-	
+
+
 	public Vec3 applyWithoutTranslationTo(Vec3 v) {
 		return new Vec3(
 				m00 * v.x() + m01 * v.y() + m02 * v.z(),
@@ -57,14 +57,14 @@ public record Affine (
 				m20 * v.x() + m21 * v.y() + m22 * v.z()
 		);
 	}
-	
-	
+
+
 	@Override
 	public Ray at(Ray r) {
 		return new Ray(at(r.p()), applyWithoutTranslationTo(r.d()));
 	}
-	
-	
+
+
 	public Affine inverse() {
 		double det = determinant();
 		return new Affine(
@@ -73,8 +73,8 @@ public record Affine (
 				(m10 * m21 - m11 * m20) / det, -(m00 * m21 - m01 * m20) / det, (m00 * m11 - m01 * m10) / det, -(m00 * m11 * m23 + m01 * m13 * m20 + m03 * m10 * m21 - m03 * m11 * m20 - m01 * m10 * m23 - m00 * m13 * m21) / det
 		);
 	}
-	
-	
+
+
 	public Affine transposeWithoutTranslation() {
 		return new Affine(
 				m00, m10, m20, 0,
@@ -82,8 +82,8 @@ public record Affine (
 				m02, m12, m22, 0
 		);
 	}
-	
-	
+
+
 	private double determinant() {
 		//noinspection UnaryPlus
 		return (
@@ -95,8 +95,8 @@ public record Affine (
 				- (m00 * m12 * m21)
 		);
 	}
-	
-	
+
+
 	public static Affine translation(Vec3 d) {
 		return new Affine(
 				1.0, 0.0, 0.0, d.x(),
@@ -104,7 +104,7 @@ public record Affine (
 				0.0, 0.0, 1.0, d.z()
 		);
 	}
-	
+
 	public static Affine rotationAboutX(double angle) {
 		return new Affine(
 				1.0, 0.0, 0.0, 0.0,
@@ -112,7 +112,7 @@ public record Affine (
 				0.0, Numeric.sinT(angle), Numeric.cosT(angle), 0.0
 		);
 	}
-	
+
 	public static Affine rotationAboutY(double angle) {
 		return new Affine(
 				Numeric.cosT(angle), 0.0, Numeric.sinT(angle), 0.0,
@@ -120,7 +120,7 @@ public record Affine (
 				-Numeric.sinT(angle), 0.0, Numeric.cosT(angle), 0.0
 		);
 	}
-	
+
 	public static Affine rotationAboutZ(double angle) {
 		return new Affine(
 				Numeric.cosT(angle), -Numeric.sinT(angle), 0.0, 0.0,
@@ -128,7 +128,7 @@ public record Affine (
 				0.0, 0.0, 1.0, 0.0
 		);
 	}
-	
+
 	public static Affine scaling(double c) {
 		return new Affine(
 				c, 0.0, 0.0, 0.0,
@@ -136,7 +136,7 @@ public record Affine (
 				0.0, 0.0, c, 0.0
 		);
 	}
-	
+
 	public static Affine scaling(Vec3 c) {
 		return new Affine(
 				c.x(), 0.0, 0.0, 0.0,
@@ -144,8 +144,8 @@ public record Affine (
 				0.0, 0.0, c.z(), 0.0
 		);
 	}
-	
-	
+
+
 	/**
 	 * One possible linear transformation mapping EX to u and preserving angles between vectors.
 	 */
@@ -157,7 +157,7 @@ public record Affine (
 			double l = Math.sqrt(lSqr);
 			double m = 1.0 / Math.sqrt(mSqr);
 			double q = l * m;
-			
+
 			return Affine.unitVectors(
 					u,
 					Vec3.xyz(-u.y() * q, u.x() * q, 0),
@@ -172,7 +172,7 @@ public record Affine (
 			);
 		}
 	}
-	
+
 	/**
 	 * One possible linear transformation mapping EX to a vector u of unit length and preserving angles between vectors.
 	 */
@@ -180,7 +180,7 @@ public record Affine (
 		if (u_.x() != 0 || u_.y() != 0) {
 			double mSqr = 1 - u_.z() * u_.z();
 			double m = 1.0 / Math.sqrt(mSqr);
-			
+
 			return Affine.unitVectors(
 					u_,
 					Vec3.xyz(-u_.y() * m, u_.x() * m, 0),
@@ -194,5 +194,5 @@ public record Affine (
 			);
 		}
 	}
-	
+
 }

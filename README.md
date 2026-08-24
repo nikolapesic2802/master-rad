@@ -1,19 +1,26 @@
-# GfxLab
+# Primitive-cost-aware BVH construction
 
+This repository contains the implementation, validation and measurements for a
+master thesis on BVH construction for heterogeneous analytic primitives.
 
-## Nameštanje
+The Git history begins with the complete
+[GfxLab-2022-2023](https://github.com/marsavic/GfxLab-2022-2023)
+course history. The last unmodified upstream commit is
+[`8f52639`](https://github.com/marsavic/GfxLab-2022-2023/commit/8f526393e6c862c41327495dab8b8afde0ef3f30).
+Thesis commits then introduce the headless reference renderer, evaluation
+scenes, CUDA path tracing, conventional and primitive-cost-aware BVH
+construction, and the measurement protocol in manuscript order.
 
-- Uključite JAR fajlove iz lib foldera u projekat, ako se to ne desi automatski.
-- Potrebno je da vaš projekat koristi JavaFX biblioteke za vaš OS.
-  - Najlakši način da to namestite je da koristite BellSoft Liberica JDK, koji, za razliku od većine drugih JDK-ova, dolazi sa ugrađenim JavaFX modulima.
-    - Ako koristite IntelliJ, ovo je lako namestiti: File > Project Structure... > Project > SDK > Add SDK > Download JDK... > Vendor: BellSoft Liberica JDK 19.0.1.
-    - Alternativno, sami preuzmite JDK sa [https://bell-sw.com/pages/downloads/](https://bell-sw.com/pages/downloads/#/java-19-current). Izaberite vaš OS, poslednju verziju, i Full JDK (jedino Full JDK uključuje JavaFX). Kada instalirate/raspakujete JDK, namestite u IDE-u da projekat koristi baš taj JDK.
-  - Ako nećete da koristite BellSoft Liberica JDK, snađite se da preuzmete odgovarajuće biblioteke na neki način (direktni download svih potrebnih jar-fajlova, Maven, ...). Potrebni su vam javafx-base, javafx-controls, javafx-graphics, i javafx-swing.
-  - U nekim slučajevima JavaFX neće koristiti GPU za iscrtavanje interfejsa i sve će biti pomalo laggy (meni se to dešava uz Linux i integrisani GPU). U tom slučaju (a ni inače verovatno ne može da škodi), dodajte system property `prism.forceGPU = true`, npr. kroz VM argument `-Dprism.forceGPU=true`.
-  
+## Build
 
-## Šta-gde
+The CPU reference renderer requires JDK 19 or newer:
 
-- Pokrećete klasu `gui.App`.
-- Nameštate šta želite da prikažete u klasi `playground.GfxLab`.
-- Sve što budemo razvijali u toku kursa biće u paketu `graphics3d`.
+```powershell
+./scripts/compile.ps1
+```
+
+Later CUDA commits add the JCuda runtime and document the corresponding NVIDIA
+driver requirements.
+
+See [docs/provenance.md](docs/provenance.md) for the exact upstream boundary
+and intentional baseline changes.
