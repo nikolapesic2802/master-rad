@@ -1,0 +1,113 @@
+{
+  "schemaVersion": 1,
+  "protocolVersion": "gfxlab-thesis-evaluation",
+  "purpose": "single full-renderer protocol for Layered Hero, Overlap, and random F1-F4",
+  "renderer": {
+    "width": 1920,
+    "height": 1080,
+    "samplesPerPixel": 1,
+    "maximumPathDepth": 12,
+    "timingRenderPixelsPerLaunch": 65536,
+    "metricsMaximumPhysicalPixelsPerLaunch": 3072,
+    "stackCapacity": 32,
+    "maximumPhysicalKernelMillisecondsExclusive": 250
+  },
+  "methodSettings": {
+    "leafSize": 8,
+    "weightedLambda": 1.0,
+    "sbvhReferenceMultiplier": 2.0,
+    "rotationPasses": 4,
+    "calibrationAppliedIdentitySha256": "631fed4c77a8ca2de8966a084677a16e3787319319cef3a6a97948f37841ad72"
+  },
+  "methods": [
+    "uniform",
+    "weighted",
+    "per_type",
+    "weighted_per_type",
+    "sbvh",
+    "weighted_sbvh",
+    "sah_rotations",
+    "weighted_sah_rotations"
+  ],
+  "comparisonEdges": [
+    "uniform__weighted",
+    "uniform__per_type",
+    "uniform__weighted_per_type",
+    "uniform__sbvh",
+    "uniform__weighted_sbvh",
+    "uniform__sah_rotations",
+    "uniform__weighted_sah_rotations"
+  ],
+  "timing": {
+    "freshUninstrumentedContexts": 2,
+    "symmetricBlocksPerContext": 2,
+    "orders": ["ABBA", "BAAB"],
+    "oppositeStartingOrderAcrossContexts": true,
+    "conditioningImmediatelyBeforeEveryMeasuredEndpoint": true,
+    "sameRaysWithinEachAdjacentPair": true,
+    "blockEstimator": "100*(1-sqrt((candidate1/reference1)*(candidate2/reference2)))",
+    "cellEstimator": "median(exactly 4 block estimates)",
+    "absoluteTimesAcrossContextsMayBeCombined": false
+  },
+  "metrics": {
+    "freshInstrumentedContextOrdinal": 3,
+    "deterministicFullRendererFrame": true,
+    "sameRendererCameraSamplingAndGeometryAsTiming": true,
+    "sameSeedAcrossMethodsWithinWorkload": true,
+    "sameSeedAsTimingBlocks": false,
+    "modeledWorkEstimator": "100*(1-candidateWork/referenceWork)",
+    "modelWeightsSource": "final primitive-cost calibration"
+  },
+  "hero": {
+    "scales": [96, 1000, 10000, 100000, 1000000],
+    "leafSizes": [1, 2, 4, 8, 16, 32, 64],
+    "lambdas": [0.0, 0.25, 0.5, 0.75, 1.0, 2.0, 5.0, 10.0, 20.0, 50.0, 100.0],
+    "sensitivityReference": {"leafSize": 8, "lambda": 0.0},
+    "sensitivityComparisonsPerScale": 76,
+    "coreEdgesPerScale": 7,
+    "additionalCoreComparisonsPerScale": 6,
+    "deduplicatedCoreEdge": "uniform__weighted"
+  },
+  "overlap": {
+    "workloadCount": 1,
+    "sceneFactoryContract": "fixed gallery overlap scene factory",
+    "geometryVariesAcrossTimingReplicates": false,
+    "measurementCamera": "frontCamera"
+  },
+  "random": {
+    "families": ["F1", "F2", "F3", "F4"],
+    "objectCounts": [100, 1000, 10000],
+    "layoutIdStartInclusive": 0,
+    "layoutIdEndInclusive": 99,
+    "layoutExperimentSeed": 5641122812212105804,
+    "layoutsPerChunkByObjectCount": {"100": 25, "1000": 25, "10000": 10},
+    "workloadCount": 1200,
+    "chunkCount": 72
+  },
+  "cardinalities": {
+    "publicationRows": 18,
+    "publicationMethodsPerRow": 8,
+    "heroDirectComparisons": 410,
+    "overlapDirectComparisons": 7,
+    "randomDirectComparisons": 8400,
+    "totalDirectComparisons": 8817,
+    "totalBuildRows": 10024,
+    "totalTimingRows": 141072,
+    "totalBlockRows": 35268,
+    "totalMetricRows": 10023,
+    "totalEvaluationChunks": 79
+  },
+  "runtime": {
+    "javaMaximumHeapGiB": 20,
+    "hardChildSeconds": 600
+  },
+  "artifactPolicy": {
+    "createNewOutputRoot": true,
+    "reservePartialBeforeContexts": true,
+    "atomicChunkPublication": true,
+    "failedAttemptClosesEvidenceRoot": true,
+    "retryWithinEvidenceRoot": false,
+    "hashEveryArtifact": true,
+    "bindSourceTreeClassesProtocolAnalyzerPtxCalibrationDeviceDriver": true
+  }
+}

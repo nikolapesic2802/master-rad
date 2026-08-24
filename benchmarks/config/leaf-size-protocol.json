@@ -1,0 +1,43 @@
+{
+  "schemaVersion": 1,
+  "protocolVersion": "gfxlab-leaf-size-study",
+  "purpose": "time-only ordinary-SAH preferred-leaf-size study on the three introductory scenes",
+  "scenes": ["GI_TEST", "CITY_OF_NIGHT_V1", "SIGNAL_CHAMBER"],
+  "leafSizes": [1, 2, 4, 8, 16, 32, 64],
+  "referenceLeafSize": 8,
+  "method": "uniform",
+  "lambda": 0.0,
+  "renderer": {
+    "width": 1920,
+    "height": 1080,
+    "samplesPerPixel": 1,
+    "maximumPathDepth": 12,
+    "timingRenderPixelsPerLaunch": 65536,
+    "timingPhysicalLaunchesPerFrame": 32,
+    "stackCapacity": 32,
+    "maximumPhysicalKernelMillisecondsExclusive": 250
+  },
+  "timing": {
+    "freshUninstrumentedContexts": 5,
+    "symmetricBlocksPerContext": 2,
+    "blockEstimator": "100*(1-sqrt((candidate1/reference1)*(candidate2/reference2)))",
+    "diagnosticContextEstimator": "median(exactly 2 block estimates; not an input to the final estimator)",
+    "candidateEstimator": "median(exactly 10 block estimates)",
+    "identicalTopologyGroupEstimator": "median(candidateRatio for every leaf size with the same topologySha256)",
+    "rebaseForFigure": "100*(identicalTopologyGroupRatio/minimumIdenticalTopologyGroupRatio-1)",
+    "metricsContext": false
+  },
+  "cardinalities": {
+    "configurations": 21,
+    "buildRows": 21,
+    "directComparisons": 18,
+    "timingRows": 720,
+    "blockRows": 180
+  },
+  "interpretation": {
+    "topologyHashRequired": true,
+    "identicalTopologyGroupsMustBeReported": true,
+    "tinyDifferencesBetweenIdenticalTopologiesAreTimingNoise": true,
+    "conclusionsUseTimeOnly": true
+  }
+}

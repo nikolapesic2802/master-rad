@@ -1,0 +1,76 @@
+{
+  "schemaVersion": 1,
+  "protocolVersion": "gfxlab-depth-study",
+  "purpose": "maximum-path-depth timing and image-similarity study on GI Test",
+  "scene": "GI_TEST",
+  "depths": [0, 2, 4, 6, 8, 10, 12, 16, 20, 24, 28, 32],
+  "referenceDepth": 12,
+  "method": "uniform",
+  "leafSize": 8,
+  "lambda": 0.0,
+  "experimentSeedUnsignedDecimal": 750422070796735135,
+  "experimentSeedHex": "0x0A6A08E5C173D29F",
+  "renderer": {
+    "width": 1920,
+    "height": 1080,
+    "samplesPerPixel": 1,
+    "maximumAllowedPathDepth": 32,
+    "timingRenderPixelsPerLaunch": 65536,
+    "bvhStackSize": 32,
+    "physicalKernelLaunchesPerFrame": 32,
+    "maximumPhysicalKernelMillisecondsExclusive": 250
+  },
+  "timing": {
+    "freshUninstrumentedContexts": 2,
+    "symmetricBlocksPerContext": 2,
+    "orders": ["ABBA", "BAAB"],
+    "oppositeStartingOrderAcrossContexts": true,
+    "conditioningImmediatelyBeforeEveryMeasuredEndpoint": true,
+    "conditioningUsesIndependentDeterministicSeed": true,
+    "sameRaysWithinEachAdjacentPair": true,
+    "depthEstimator": "median of four persisted paired block reductions, reported as candidate kernel time relative to reference depth 12",
+    "referenceSummaryRow": "exact 100 percent identity row; no timing blocks required",
+    "absoluteTimesAcrossContextsMayBePooled": false,
+    "pairedBlockRatiosAcrossContextsMayBeAggregated": true,
+    "metricsContext": false
+  },
+  "presentation": {
+    "width": 3840,
+    "height": 2160,
+    "samplesPerPixel": 512,
+    "logicalSamplesPerFrame": 1,
+    "renderPixelsPerLaunch": 65536,
+    "physicalKernelLaunchesPerFrame": 128,
+    "referenceDepth": 32,
+    "sameSceneCameraBvhAndExperimentSeedAsTiming": true,
+    "sameFrameSequenceAtEveryDepth": true,
+    "fixedExposureFromReferenceDepth": true,
+    "toneMapping": "sRGB after scale = (1 - 1 / (1 + luminance / 16)) / luminance and one common reference post-factor",
+    "comparisonDomain": "fixed-exposure tone-mapped 8-bit RGB",
+    "meanAbsoluteChannelDifference": "sum(abs(RGB_depth - RGB_depth32)) / (width * height * 3)",
+    "similarityPercent": "100 * (1 - meanAbsoluteChannelDifference / 255)",
+    "renderStripDepths": [0, 2, 4, 8, 12, 20, 32]
+  },
+  "cardinalities": {
+    "configurations": 12,
+    "directComparisons": 11,
+    "timingRows": 176,
+    "blockRows": 44,
+    "summaryRows": 12
+  },
+  "interpretation": {
+    "topologyHashMustMatchAcrossDepths": true,
+    "timingAndPresentationTopologyHashMustMatch": true,
+    "conclusionsUseKernelTimeOnly": true,
+    "qualitativeRendersArePresentationAssets": true
+  },
+  "artifactPolicy": {
+    "createNewOutputRoot": true,
+    "reservePartialBeforeContexts": true,
+    "atomicPublication": true,
+    "finalPublicationBoundary": "atomic appearance of FINAL_SHA256SUMS.txt after an atomically published final-manifest.json",
+    "failedAttemptClosesEvidenceRoot": true,
+    "retryWithinEvidenceRoot": false,
+    "hashEveryArtifact": true
+  }
+}

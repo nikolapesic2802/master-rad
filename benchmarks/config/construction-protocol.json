@@ -1,0 +1,56 @@
+{
+  "schemaVersion": 1,
+  "protocolVersion": "gfxlab-construction-study",
+  "purpose": "warmed and order-balanced descriptive CPU BVH construction benchmark",
+  "cudaPermitted": false,
+  "methods": [
+    "uniform",
+    "weighted",
+    "per_type",
+    "weighted_per_type",
+    "sbvh",
+    "weighted_sbvh",
+    "sah_rotations",
+    "weighted_sah_rotations"
+  ],
+  "publicationRows": {
+    "heroScales": [96, 1000, 10000, 100000, 1000000],
+    "overlap": ["overlap-10k"],
+    "randomFamilies": ["F1", "F2", "F3", "F4"],
+    "randomObjectCounts": [100, 1000, 10000],
+    "dataRowCount": 18
+  },
+  "fixedWorkloads": {
+    "untimedWarmupRounds": 1,
+    "measuredRounds": 8,
+    "orderDesign": "eight-sequence Williams design",
+    "baseSequenceByMethodOrdinal": [0, 1, 7, 2, 6, 3, 5, 4],
+    "estimator": "median(exactly 8 internal builder times)"
+  },
+  "randomWorkloads": {
+    "reservedWarmupLayoutId": 100,
+    "measuredLayoutIdStartInclusive": 0,
+    "measuredLayoutIdEndInclusive": 99,
+    "methodOrder": "Williams sequence selected by zero-based layout ordinal modulo 8",
+    "positionCountsPerMethod": [12, 13],
+    "estimator": "median(exactly 100 internal builder times)"
+  },
+  "estimand": {
+    "primaryColumn": "buildNanos",
+    "definition": "internal CPU BVH constructor interval",
+    "validationColumn": "wallNanos",
+    "excludes": ["scene generation", "GPU upload", "CUDA context", "rendering"],
+    "optimizedImplementationClaim": false
+  },
+  "producerOutputs": [
+    "raw-builds.csv",
+    "manifest.json",
+    "SHA256SUMS.txt"
+  ],
+  "analysisOutputs": [
+    "bvh-build-ms-matrix.csv",
+    "bvh-node-count-matrix.csv",
+    "bvh-bytes-matrix.csv",
+    "bvh-depth-matrix.csv"
+  ]
+}
