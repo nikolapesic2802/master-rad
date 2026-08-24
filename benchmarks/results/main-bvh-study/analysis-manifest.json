@@ -1,0 +1,323 @@
+{
+  "analyzerSha256": "90011943a7ef63868cfb2726d94d96de29896acdcae76598da3a33c9125d7786",
+  "analyzerVersion": "gfxlab-v18-analysis-v1",
+  "binderAcceptance": {
+    "requiredConstructionState": "V18_CPU_MEASURED",
+    "requiredDepthMeasurementState": "V18_GPU_MEASURED",
+    "requiredEvidenceState": "V18_COMPLETE",
+    "requiredGpuMeasurementState": "V18_GPU_MEASURED",
+    "requiredHistoricalAuditOnly": false,
+    "requiredLeafMeasurementState": "V18_GPU_MEASURED",
+    "requiredPublicationBindingAuthorized": true,
+    "requiredSchemaVersion": "V18_ANALYSIS_V1"
+  },
+  "constructionProtocolSha256": "e21f87a584fb807592fcf467bcbd2ffebbba2e5c4ee48555e41bd7f0bdcf2b74",
+  "constructionProtocolVersion": "gfxlab-v18-cpu-construction-v1",
+  "constructionState": "V18_CPU_MEASURED",
+  "depthMeasurementState": "V18_GPU_MEASURED",
+  "depthProtocolSha256": "1c08b3f89e7b598080fe3a7f63cd5f512d1eaff2dac3bf9f3b6aef7e97bcd7a1",
+  "depthProtocolVersion": "gfxlab-v18-depth-direct-v2",
+  "evaluationProtocolSha256": "af59259628b4857f8a9221c99df543c752c953c5741ec23d0b8a49c9c01ec41c",
+  "evaluationProtocolVersion": "gfxlab-v18-unified-evaluation-v1",
+  "evidenceState": "V18_COMPLETE",
+  "gpuMeasurementState": "V18_GPU_MEASURED",
+  "historicalAuditOnly": false,
+  "inputEvidence": {
+    "construction": {
+      "ledgerFile": "SHA256SUMS.txt",
+      "ledgerSha256": "bbd2228bf0bb1c0bea717af729fb26b2c3a31c62cefa529ee2764ec9a7025c1e"
+    },
+    "depth": {
+      "ledgerFile": "FINAL_SHA256SUMS.txt",
+      "ledgerSha256": "eb875e586423eb655e2c15ddc5fe93a292ea4c46d63aa838d90a2cffb4ef276d"
+    },
+    "evaluation": {
+      "ledgerFile": "FINAL_SHA256SUMS.txt",
+      "ledgerSha256": "6226789e4c60448accf89c7c2ee6e23fa30366697e6c864f3e6ed355870ce759",
+      "metricsPtxSha256": "6e5ff2cfdae052b439a2f7416fa50d3d5ca387df9e268dafe1409f1da87d37ca"
+    },
+    "leaf": {
+      "ledgerFile": "FINAL_SHA256SUMS.txt",
+      "ledgerSha256": "5405ddb3443bdcb2242dac7f23fcc50b5af452a6beae393171edd634c84a58f8"
+    }
+  },
+  "leafMeasurementState": "V18_GPU_MEASURED",
+  "leafProtocolSha256": "2b01d937b151c5828d0f3c4a11d91643d21c866e1cdb7e3262cf5b6cad168299",
+  "leafProtocolVersion": "gfxlab-v18-leaf-direct-v1",
+  "outputs": {
+    "bvh-build-ms-matrix.csv": {
+      "columns": [
+        "schemaVersion",
+        "evidenceState",
+        "rowOrdinal",
+        "rowId",
+        "uniform",
+        "weighted",
+        "per_type",
+        "weighted_per_type",
+        "sbvh",
+        "weighted_sbvh",
+        "sah_rotations",
+        "weighted_sah_rotations"
+      ],
+      "dataRows": 18,
+      "evidenceStates": [
+        "V18_CPU_MEASURED"
+      ],
+      "fileName": "bvh-build-ms-matrix.csv",
+      "sha256": "0daecafa4b2e555e676f6544baf3710a75fbd24ed08315baf74266ca5048382d"
+    },
+    "bvh-bytes-matrix.csv": {
+      "columns": [
+        "schemaVersion",
+        "evidenceState",
+        "rowOrdinal",
+        "rowId",
+        "uniform",
+        "weighted",
+        "per_type",
+        "weighted_per_type",
+        "sbvh",
+        "weighted_sbvh",
+        "sah_rotations",
+        "weighted_sah_rotations"
+      ],
+      "dataRows": 18,
+      "evidenceStates": [
+        "V18_CPU_MEASURED"
+      ],
+      "fileName": "bvh-bytes-matrix.csv",
+      "sha256": "3888cb61773ef2aa93e5d8c00f76ae25a0c4097f970261d2d0c5d5b9bda6c306"
+    },
+    "bvh-depth-matrix.csv": {
+      "columns": [
+        "schemaVersion",
+        "evidenceState",
+        "rowOrdinal",
+        "rowId",
+        "uniform",
+        "weighted",
+        "per_type",
+        "weighted_per_type",
+        "sbvh",
+        "weighted_sbvh",
+        "sah_rotations",
+        "weighted_sah_rotations"
+      ],
+      "dataRows": 18,
+      "evidenceStates": [
+        "V18_CPU_MEASURED"
+      ],
+      "fileName": "bvh-depth-matrix.csv",
+      "sha256": "8587c64779eb7e3e1d3fc8c54b96b1034aa5e7b72c591d830022c15ba59c43fe"
+    },
+    "bvh-node-count-matrix.csv": {
+      "columns": [
+        "schemaVersion",
+        "evidenceState",
+        "rowOrdinal",
+        "rowId",
+        "uniform",
+        "weighted",
+        "per_type",
+        "weighted_per_type",
+        "sbvh",
+        "weighted_sbvh",
+        "sah_rotations",
+        "weighted_sah_rotations"
+      ],
+      "dataRows": 18,
+      "evidenceStates": [
+        "V18_CPU_MEASURED"
+      ],
+      "fileName": "bvh-node-count-matrix.csv",
+      "sha256": "0d0861c5f4c01662efa89d8aa56f76d29518c684f14ec563de72e9461e9a3d08"
+    },
+    "core8-detail.csv": {
+      "columns": [
+        "schemaVersion",
+        "evidenceState",
+        "rowOrdinal",
+        "rowId",
+        "methodOrdinal",
+        "methodId",
+        "layoutCount",
+        "timeReductionPercent",
+        "workReductionPercent",
+        "aabbReductionPercent",
+        "primitiveReductionPercent",
+        "medianRays",
+        "medianAabbTests",
+        "medianPrimitiveTests",
+        "medianSphereTests",
+        "medianBoxTests",
+        "medianPlaneTests",
+        "medianAffineSphereTests",
+        "medianAffineBoxTests",
+        "medianInternalNodeVisits",
+        "medianLeafNodeVisits",
+        "medianModeledWork",
+        "topologySha256",
+        "topologyDistinctCount"
+      ],
+      "dataRows": 144,
+      "evidenceStates": [
+        "V18_GPU_MEASURED"
+      ],
+      "fileName": "core8-detail.csv",
+      "sha256": "e551449a469c528d714cadfdf4ef97d13c555cfbf892fd7bf326a0c0bea2f5a9"
+    },
+    "core8-time-matrix.csv": {
+      "columns": [
+        "schemaVersion",
+        "evidenceState",
+        "rowOrdinal",
+        "rowId",
+        "uniform",
+        "weighted",
+        "per_type",
+        "weighted_per_type",
+        "sbvh",
+        "weighted_sbvh",
+        "sah_rotations",
+        "weighted_sah_rotations"
+      ],
+      "dataRows": 18,
+      "evidenceStates": [
+        "V18_GPU_MEASURED"
+      ],
+      "fileName": "core8-time-matrix.csv",
+      "sha256": "21c4641391d70b54ee4bb634daf92078f079c862c6793957a42f2c70ad29fd7c"
+    },
+    "core8-work-matrix.csv": {
+      "columns": [
+        "schemaVersion",
+        "evidenceState",
+        "rowOrdinal",
+        "rowId",
+        "uniform",
+        "weighted",
+        "per_type",
+        "weighted_per_type",
+        "sbvh",
+        "weighted_sbvh",
+        "sah_rotations",
+        "weighted_sah_rotations"
+      ],
+      "dataRows": 18,
+      "evidenceStates": [
+        "V18_GPU_MEASURED"
+      ],
+      "fileName": "core8-work-matrix.csv",
+      "sha256": "ef2ad52e7783fa1089128ebc478ca0dba5fc6b7ec0abcfedcb5726bf602d1848"
+    },
+    "depth-time.csv": {
+      "columns": [
+        "schemaVersion",
+        "evidenceState",
+        "depthOrdinal",
+        "maximumPathDepth",
+        "isReference",
+        "comparisonId",
+        "blockCount",
+        "medianRelativeKernelPercent",
+        "topologySha256"
+      ],
+      "dataRows": 12,
+      "evidenceStates": [
+        "V18_GPU_MEASURED"
+      ],
+      "fileName": "depth-time.csv",
+      "sha256": "2ddf99c88649a4b382500179bf3aa9737f1b65f9eaa01ef488950c9986fd5c4f"
+    },
+    "hero-sensitivity.csv": {
+      "columns": [
+        "schemaVersion",
+        "evidenceState",
+        "rowOrdinal",
+        "rowId",
+        "scale",
+        "cellOrdinal",
+        "leafSize",
+        "lambda",
+        "comparisonId",
+        "anchorSynthetic",
+        "blockCount",
+        "timeReductionPercent",
+        "workReductionPercent",
+        "aabbReductionPercent",
+        "primitiveReductionPercent",
+        "referenceModeledWork",
+        "candidateModeledWork",
+        "topologySha256"
+      ],
+      "dataRows": 385,
+      "evidenceStates": [
+        "V18_GPU_MEASURED"
+      ],
+      "fileName": "hero-sensitivity.csv",
+      "sha256": "4398eb45a728f83bee70e9c80e1a96c058d9b7ecd43af5a7ebd8ab1c3dd84be8"
+    },
+    "layout-sign-counts.csv": {
+      "columns": [
+        "schemaVersion",
+        "evidenceState",
+        "family",
+        "objectCount",
+        "comparisonId",
+        "layoutCount",
+        "timeBetter",
+        "timeWorse",
+        "timeTie",
+        "workBetter",
+        "workWorse",
+        "workTie"
+      ],
+      "dataRows": 12,
+      "evidenceStates": [
+        "V18_GPU_MEASURED"
+      ],
+      "fileName": "layout-sign-counts.csv",
+      "sha256": "f6aa1e1263f9b07a02d04b0ca5b8a53572ebcba77efa7c19fa5fd08197a4ffd2"
+    },
+    "leaf-size-time.csv": {
+      "columns": [
+        "schemaVersion",
+        "evidenceState",
+        "sceneOrdinal",
+        "sceneId",
+        "leafSize",
+        "context1ReductionPercent",
+        "context2ReductionPercent",
+        "context3ReductionPercent",
+        "context4ReductionPercent",
+        "context5ReductionPercent",
+        "medianBlockReductionPercent",
+        "relativeSlowdownFromBestPercent",
+        "topologySha256",
+        "nodeCount",
+        "maxDepth",
+        "identicalTopologyLeafSizes"
+      ],
+      "dataRows": 21,
+      "evidenceStates": [
+        "V18_GPU_MEASURED"
+      ],
+      "fileName": "leaf-size-time.csv",
+      "sha256": "c6cbfeadc149c2305fd3332576aab32a90c808a14c433b0d01166f041214b3ce"
+    }
+  },
+  "publicationBindingAuthorized": true,
+  "schemaVersion": "V18_ANALYSIS_V1",
+  "sharedGpuRuntimeIdentity": {
+    "computeCapability": "compute_86",
+    "deviceName": "NVIDIA GeForce RTX 3080",
+    "driverVersion": "610.47",
+    "timingPtxSha256": "85a29c3b15f3a0afb39563a49cf4c6d86ba7d7301841d73c33083364c7633d15"
+  },
+  "sharedSourceIdentity": {
+    "compiledClassesSha256": "a8a09df0c8f4ef3e183bdf041ddb9a1e15a1b1042d3cfc1cc8e6d75da6485146",
+    "sourceCommit": "2ffc71f97cbd0085fe1296ed7e3f88c076b3f136",
+    "sourceTree": "656782480ffebbe6cefe2688df8e0cbc95ac5782"
+  }
+}

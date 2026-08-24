@@ -1,0 +1,10 @@
+{
+  "constructionState": "V18_CPU_MEASURED",
+  "depthMeasurementState": "V18_GPU_MEASURED",
+  "evidenceState": "V18_COMPLETE",
+  "gpuMeasurementState": "V18_GPU_MEASURED",
+  "historicalAuditOnly": false,
+  "leafMeasurementState": "V18_GPU_MEASURED",
+  "publicationBindingAuthorized": true,
+  "schemaVersion": 1
+}

@@ -46,6 +46,10 @@ new directory below `benchmarks/runs/`. For example:
 The complete stage order and output contracts are described in
 [docs/thesis/measurement_protocol.md](docs/thesis/measurement_protocol.md).
 
+The exact published summary tables are retained under `benchmarks/results/`.
+Their measured source identities and integrity digests are listed in
+[benchmarks/RESULTS_PROVENANCE.md](benchmarks/RESULTS_PROVENANCE.md).
+
 Final analysis requires the four completed study roots, the correctness root
 and the applied calibration record:
 

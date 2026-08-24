@@ -6,3 +6,6 @@
 *.csv text eol=lf
 *.json text eol=lf
 *.jar binary
+
+# Preserve the immutable archived provenance file byte for byte.
+benchmarks/results/depth-similarity/depth-similarity.provenance.json binary

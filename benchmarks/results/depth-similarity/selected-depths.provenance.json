@@ -1,0 +1,33 @@
+{
+  "schemaVersion": 1,
+  "assetId": "gi-depth-selected-renders-v1",
+  "purpose": "presentation-only-depth-visual-comparison",
+  "timingRole": "not-timing-evidence",
+  "builderTreatment": "embed-without-filtering-or-postprocessing",
+  "asset": {
+    "path": "docs/thesis/figures/derived/gi-depth/selected-depths.png",
+    "sha256": "ecd26c50f08f4fd8f311198332af340b9fa5fa83a0cf9d50f3b851159a6e1cc2",
+    "sizeBytes": 454133,
+    "widthPx": 2055,
+    "heightPx": 993
+  },
+  "historicalSource": {
+    "publicationCommit": "2852e114c0a8dff4cb3e3dc44a847afe083c1781",
+    "sourceCommit": "6bd0849a13626297604080ad8641ff91344ed8e0",
+    "completionManifestPath": "docs/thesis/figures/gi-depth-4k/completion-manifest.json",
+    "completionManifestSha256": "39648f0c4e19afd43832255984763c163f241d49d5d6a1eed4d828c4c85493ec",
+    "renderProtocolPath": "docs/thesis/figures/gi-depth-4k/render-protocol.json",
+    "scene": "GI_TEST",
+    "rendererVersion": "GPU_WEIGHTED_BVH",
+    "selectedDepths": [0, 1, 2, 4, 8, 12, 20],
+    "sourceWidthPx": 3840,
+    "sourceHeightPx": 2160,
+    "samplesPerPixel": 512,
+    "seed": "750422070796735135",
+    "bvhLeafSize": 8,
+    "bvhLambda": 1,
+    "bvhStackSize": 32,
+    "commonTonemapPostFactor": 17,
+    "heldConstant": ["scene", "camera", "seed", "bvh", "tonemap"]
+  }
+}
