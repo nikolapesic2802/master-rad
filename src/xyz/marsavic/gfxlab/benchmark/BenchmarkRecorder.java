@@ -1,11 +1,6 @@
 package xyz.marsavic.gfxlab.benchmark;
 
-import com.sun.management.OperatingSystemMXBean;
-
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
-import java.lang.management.ManagementFactory;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -13,31 +8,186 @@ import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
-import java.util.OptionalDouble;
-import java.util.concurrent.TimeUnit;
 
 /**
  * Per-frame benchmarking helper.
  * Each row corresponds to one logged frame; the row index is the frame id.
  */
 public class BenchmarkRecorder implements AutoCloseable {
+	private static final String CSV_HEADER =
+			"count,totalMs,backendMs,kernelMs,maximumPhysicalKernelMs,copyMs,uploadMs,width,height,cameraSamples,pathSegments,secondaryPathSegments,"
+					+ "primitiveTests,aabbTests,rootAabbTests,internalNodeVisits,leafNodeVisits,"
+					+ "homogeneousLeafNodeVisits,mixedLeafNodeVisits,"
+					+ "sphereTests,boxTests,planeTests,affineSphereTests,affineBoxTests,"
+					+ "traversalWork,primitiveTestsPerPathSegment,primitiveTestsPerCameraSample,aabbTestsPerPathSegment,"
+					+ "aabbTestsPerCameraSample,rootAabbTestsPerPathSegment,traversalWorkPerPathSegment,traversalWorkPerCameraSample,"
+					+ "stackOverflows,maxStackSize\n";
 
-	public record FrameSample(
+	public record RunMetadata(
+			Long sceneBytes,
+			Long bvhBytes,
+			Long hostBytes,
+			Long estimatedDeviceBytes,
+			Integer primitiveCount,
+			Integer sphereCount,
+			Integer boxCount,
+			Integer planeCount,
+			Integer affineSphereCount,
+			Integer affineBoxCount,
+			Integer materialCount,
+			Integer accelerationNodeCount,
+			Integer accelerationReferenceCount,
+			Integer leafCount,
+			Integer maxTreeDepth,
+			Integer leafSize,
+			Integer minLeafOccupancy,
+			Integer maxLeafOccupancy,
+			Double meanLeafOccupancy,
+			Double generalizedSahCost,
+			Double uniformSahCost,
+			Double weightedSahCost,
+			String accelerationConfig
+	) { }
+
+	public record FrameMetrics(
+			long count,
+			long totalNanos,
+			Long kernelNanos,
+			Long maximumPhysicalKernelNanos,
+			Long copyNanos,
+			Long uploadNanos,
+			int width,
+			int height,
+			Long cameraSamples,
+			Long pathSegments,
+			Long primitiveTests,
+			Long aabbTests,
+			Long sphereTests,
+			Long boxTests,
+			Long planeTests,
+			Long affineSphereTests,
+			Long affineBoxTests,
+			Long rootAabbTests,
+			Double traversalWork,
+			Long stackOverflows,
+			Long maxStackSize,
+			Long internalNodeVisits,
+			Long leafNodeVisits,
+			Long homogeneousLeafNodeVisits,
+			Long mixedLeafNodeVisits,
+			Long backendNanos
+	) {
+		public FrameMetrics {
+			if (kernelNanos != null && maximumPhysicalKernelNanos != null
+					&& (kernelNanos < 0L || maximumPhysicalKernelNanos < 0L
+					|| maximumPhysicalKernelNanos > kernelNanos)) {
+				throw new IllegalArgumentException(
+						"Maximum physical-kernel time must be bounded by total kernel time");
+			}
+			if (leafNodeVisits != null && homogeneousLeafNodeVisits != null
+					&& mixedLeafNodeVisits != null
+					&& leafNodeVisits.longValue()
+					!= homogeneousLeafNodeVisits.longValue() + mixedLeafNodeVisits.longValue()) {
+				throw new IllegalArgumentException(
+						"Leaf-kind visits must partition total leaf visits");
+			}
+		}
+
+		public FrameMetrics(long count, long totalNanos, Long kernelNanos, Long copyNanos, int width, int height,
+		                    Long cameraSamples, Long pathSegments, Long primitiveTests, Long aabbTests) {
+			this(count, totalNanos, kernelNanos, null, copyNanos, null, width, height,
+					cameraSamples, pathSegments, primitiveTests, aabbTests,
+					null, null, null, null, null, null, null,
+					null, null, null, null, null, null, null);
+		}
+	}
+
+	private record FrameSample(
 			long count,
 			double totalMs,
+			Double backendMs,
 			Double kernelMs,
+			Double maximumPhysicalKernelMs,
 			Double copyMs,
+			Double uploadMs,
 			int width,
-			int height
+			int height,
+			Long cameraSamples,
+			Long pathSegments,
+			Long primitiveTests,
+			Long aabbTests,
+			Long sphereTests,
+			Long boxTests,
+			Long planeTests,
+			Long affineSphereTests,
+			Long affineBoxTests,
+			Long rootAabbTests,
+			Double traversalWork,
+			Long stackOverflows,
+			Long maxStackSize,
+			Long internalNodeVisits,
+			Long leafNodeVisits,
+			Long homogeneousLeafNodeVisits,
+			Long mixedLeafNodeVisits
 	) {
 		String toCsv() {
-			return String.format(Locale.ROOT, "%d,%.4f,%s,%s,%d,%d%n",
-					count,
-					totalMs,
-					kernelMs == null ? "" : String.format(Locale.ROOT, "%.4f", kernelMs),
-					copyMs == null ? "" : String.format(Locale.ROOT, "%.4f", copyMs),
-					width,
-					height);
+			Long secondaryPathSegments = cameraSamples == null || pathSegments == null
+					? null : Math.max(0L, pathSegments - cameraSamples);
+			Double primitiveTestsPerPathSegment = ratio(primitiveTests, pathSegments);
+			Double primitiveTestsPerCameraSample = ratio(primitiveTests, cameraSamples);
+			Double aabbTestsPerPathSegment = ratio(aabbTests, pathSegments);
+			Double aabbTestsPerCameraSample = ratio(aabbTests, cameraSamples);
+			Double rootTestsPerPathSegment = ratio(rootAabbTests, pathSegments);
+			Double traversalWorkPerPathSegment = ratio(traversalWork, pathSegments);
+			Double traversalWorkPerCameraSample = ratio(traversalWork, cameraSamples);
+			return String.join(",",
+					Long.toString(count),
+					String.format(Locale.ROOT, "%.4f", totalMs),
+					format(backendMs),
+					format(kernelMs),
+					format(maximumPhysicalKernelMs),
+					format(copyMs),
+					format(uploadMs),
+					Integer.toString(width),
+					Integer.toString(height),
+					format(cameraSamples),
+					format(pathSegments),
+					format(secondaryPathSegments),
+					format(primitiveTests),
+					format(aabbTests),
+					format(rootAabbTests),
+					format(internalNodeVisits),
+					format(leafNodeVisits),
+					format(homogeneousLeafNodeVisits),
+					format(mixedLeafNodeVisits),
+					format(sphereTests),
+					format(boxTests),
+					format(planeTests),
+					format(affineSphereTests),
+					format(affineBoxTests),
+					format(traversalWork),
+					format(primitiveTestsPerPathSegment),
+					format(primitiveTestsPerCameraSample),
+					format(aabbTestsPerPathSegment),
+					format(aabbTestsPerCameraSample),
+					format(rootTestsPerPathSegment),
+					format(traversalWorkPerPathSegment),
+					format(traversalWorkPerCameraSample),
+					format(stackOverflows),
+					format(maxStackSize)) + System.lineSeparator();
+		}
+
+		private static Double ratio(Long numerator, Long denominator) {
+			return numerator == null || denominator == null || denominator == 0 ? null : numerator / (double) denominator;
+		}
+
+		private static Double ratio(Double numerator, Long denominator) {
+			return numerator == null || denominator == null || denominator == 0 ? null : numerator / denominator;
+		}
+
+		private static String format(Object value) {
+			if (value == null) return "";
+			return value instanceof Double d ? String.format(Locale.ROOT, "%.4f", d) : value.toString();
 		}
 	}
 
@@ -49,12 +199,9 @@ public class BenchmarkRecorder implements AutoCloseable {
 	private final String sceneName;
 	private final String configuration;
 	private final List<FrameSample> buffer = new ArrayList<>();
-	private final UsageSampler usageSampler;
 	private boolean headerWritten;
-
-	public BenchmarkRecorder(Path outputFile, int flushEvery, String cpuInfo, String gpuInfo, String version, String sceneName) {
-		this(outputFile, flushEvery, cpuInfo, gpuInfo, version, sceneName, "");
-	}
+	private RunMetadata runMetadata;
+	private String compiledPtxSha256;
 
 	public BenchmarkRecorder(Path outputFile, int flushEvery, String cpuInfo, String gpuInfo, String version, String sceneName,
 	                         String configuration) {
@@ -65,15 +212,26 @@ public class BenchmarkRecorder implements AutoCloseable {
 		this.version = version == null ? "" : version;
 		this.sceneName = sceneName == null ? "" : sceneName;
 		this.configuration = configuration == null ? "" : configuration;
-		this.usageSampler = UsageSampler.maybeStart();
 	}
 
 	public synchronized void record(long countPerFrame, int width, int height, long totalNanos, Long kernelNanos, Long copyNanos) {
-		double totalMs = nanosToMs(totalNanos);
-		Double kernelMs = kernelNanos == null ? null : nanosToMs(kernelNanos);
-		Double copyMs = copyNanos == null ? null : nanosToMs(copyNanos);
+		record(new FrameMetrics(countPerFrame, totalNanos, kernelNanos, copyNanos, width, height,
+				null, null, null, null));
+	}
 
-		FrameSample sample = new FrameSample(countPerFrame, totalMs, kernelMs, copyMs, width, height);
+	public synchronized void record(FrameMetrics metrics) {
+		FrameSample sample = new FrameSample(metrics.count(), nanosToMs(metrics.totalNanos()),
+				nanosToMs(metrics.backendNanos()),
+				nanosToMs(metrics.kernelNanos()),
+				nanosToMs(metrics.maximumPhysicalKernelNanos()),
+				nanosToMs(metrics.copyNanos()), nanosToMs(metrics.uploadNanos()),
+				metrics.width(), metrics.height(),
+				metrics.cameraSamples(), metrics.pathSegments(), metrics.primitiveTests(), metrics.aabbTests(),
+				metrics.sphereTests(), metrics.boxTests(), metrics.planeTests(),
+				metrics.affineSphereTests(), metrics.affineBoxTests(), metrics.rootAabbTests(),
+				metrics.traversalWork(), metrics.stackOverflows(), metrics.maxStackSize(),
+				metrics.internalNodeVisits(), metrics.leafNodeVisits(),
+				metrics.homogeneousLeafNodeVisits(), metrics.mixedLeafNodeVisits());
 		buffer.add(sample);
 
 		printSample(sample);
@@ -82,21 +240,54 @@ public class BenchmarkRecorder implements AutoCloseable {
 		}
 	}
 
+	public synchronized void setRunMetadata(RunMetadata runMetadata) {
+		if (headerWritten) {
+			throw new IllegalStateException("Run metadata must be set before the first benchmark row is flushed.");
+		}
+		this.runMetadata = runMetadata;
+	}
+
+	public synchronized void setCompiledPtxSha256(String compiledPtxSha256) {
+		if (headerWritten) {
+			throw new IllegalStateException(
+					"Compiled PTX hash must be set before the first benchmark row is flushed.");
+		}
+		if (compiledPtxSha256 == null
+				|| !compiledPtxSha256.matches("[0-9a-fA-F]{64}")) {
+			throw new IllegalArgumentException(
+					"Compiled PTX hash must be a 64-digit SHA-256 value.");
+		}
+		this.compiledPtxSha256 = compiledPtxSha256.toLowerCase(Locale.ROOT);
+	}
+
 	private void printSample(FrameSample sample) {
+		String backendPart = sample.backendMs == null ? "" : String.format(Locale.ROOT, ", backend=%.3f ms", sample.backendMs);
 		String kernelPart = sample.kernelMs == null ? "" : String.format(Locale.ROOT, ", kernel=%.3f ms", sample.kernelMs);
+		String maximumKernelPart = sample.maximumPhysicalKernelMs == null ? ""
+				: String.format(Locale.ROOT, ", max-kernel=%.3f ms", sample.maximumPhysicalKernelMs);
 		String copyPart = sample.copyMs == null ? "" : String.format(Locale.ROOT, ", copy=%.3f ms", sample.copyMs);
+		String uploadPart = sample.uploadMs == null ? "" : String.format(Locale.ROOT, ", upload=%.3f ms", sample.uploadMs);
+		String primitivePart = sample.primitiveTests == null || sample.pathSegments == null || sample.pathSegments == 0 ? ""
+				: String.format(Locale.ROOT, ", prim/segment=%.2f", sample.primitiveTests / (double) sample.pathSegments);
+		String nodePart = sample.aabbTests == null || sample.pathSegments == null || sample.pathSegments == 0 ? ""
+				: String.format(Locale.ROOT, ", aabb/segment=%.2f", sample.aabbTests / (double) sample.pathSegments);
 		System.out.printf(Locale.ROOT,
-				"[BENCH]: count=%d total=%.3f ms%s%s (%dx%d)%n",
+				"[BENCH]: count=%d total=%.3f ms%s%s%s%s%s%s%s (%dx%d)%n",
 				sample.count,
 				sample.totalMs,
+				backendPart,
 				kernelPart,
+				maximumKernelPart,
 				copyPart,
+				uploadPart,
+				primitivePart,
+				nodePart,
 				sample.width,
 				sample.height);
 	}
 
-	private double nanosToMs(long nanos) {
-		return nanos / 1_000_000.0;
+	private static Double nanosToMs(Long nanos) {
+		return nanos == null ? null : nanos / 1_000_000.0;
 	}
 
 	public synchronized void flush() {
@@ -106,9 +297,7 @@ public class BenchmarkRecorder implements AutoCloseable {
 		try {
 			Files.createDirectories(outputFile.getParent());
 			if (!headerWritten) {
-				String header = "# cpu=" + cpuInfo + "; gpu=" + gpuInfo + "; version=" + version + "; scene=" + sceneName
-						+ "; config=" + configuration + "\n"
-						+ "count,totalMs,kernelMs,copyMs,width,height\n";
+				String header = buildHeader();
 				Files.writeString(outputFile, header, StandardCharsets.UTF_8,
 						StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
 				headerWritten = true;
@@ -125,270 +314,48 @@ public class BenchmarkRecorder implements AutoCloseable {
 		}
 	}
 
+	private String buildHeader() {
+		StringBuilder header = new StringBuilder("# cpu=").append(cpuInfo)
+				.append("; gpu=").append(gpuInfo)
+				.append("; version=").append(version)
+				.append("; scene=").append(sceneName)
+				.append("; config=").append(configuration)
+				.append("; metricSchemaVersion=5");
+		if (runMetadata != null) {
+			appendMetadata(header, "sceneBytes", runMetadata.sceneBytes());
+			appendMetadata(header, "bvhBytes", runMetadata.bvhBytes());
+			appendMetadata(header, "hostBytes", runMetadata.hostBytes());
+			appendMetadata(header, "estimatedDeviceBytes", runMetadata.estimatedDeviceBytes());
+			appendMetadata(header, "primitiveCount", runMetadata.primitiveCount());
+			appendMetadata(header, "sphereCount", runMetadata.sphereCount());
+			appendMetadata(header, "boxCount", runMetadata.boxCount());
+			appendMetadata(header, "planeCount", runMetadata.planeCount());
+			appendMetadata(header, "affineSphereCount", runMetadata.affineSphereCount());
+			appendMetadata(header, "affineBoxCount", runMetadata.affineBoxCount());
+			appendMetadata(header, "materialCount", runMetadata.materialCount());
+			appendMetadata(header, "accelerationNodeCount", runMetadata.accelerationNodeCount());
+			appendMetadata(header, "accelerationReferenceCount", runMetadata.accelerationReferenceCount());
+			appendMetadata(header, "leafCount", runMetadata.leafCount());
+			appendMetadata(header, "maxTreeDepth", runMetadata.maxTreeDepth());
+			appendMetadata(header, "leafSize", runMetadata.leafSize());
+			appendMetadata(header, "minLeafOccupancy", runMetadata.minLeafOccupancy());
+			appendMetadata(header, "maxLeafOccupancy", runMetadata.maxLeafOccupancy());
+			appendMetadata(header, "meanLeafOccupancy", runMetadata.meanLeafOccupancy());
+			appendMetadata(header, "generalizedSahCost", runMetadata.generalizedSahCost());
+			appendMetadata(header, "uniformSahCost", runMetadata.uniformSahCost());
+			appendMetadata(header, "weightedSahCost", runMetadata.weightedSahCost());
+			appendMetadata(header, "accelerationConfig", runMetadata.accelerationConfig());
+		}
+		appendMetadata(header, "compiledPtxSha256", compiledPtxSha256);
+		return header.append('\n').append(CSV_HEADER).toString();
+	}
+
+	private static void appendMetadata(StringBuilder header, String key, Object value) {
+		if (value != null) header.append("; ").append(key).append('=').append(value);
+	}
+
 	@Override
 	public void close() {
-		UsageSummary summary = usageSampler == null ? null : usageSampler.stopAndGetSummary();
 		flush();
-		appendUsageSummary(summary);
 	}
-
-	private void appendUsageSummary(UsageSummary summary) {
-		if (summary == null || outputFile == null) {
-			return;
-		}
-		String cpuPart = summary.avgProcessCpuPercent().isPresent()
-				? String.format(Locale.ROOT, "avgProcessCpu=%.1f%%", summary.avgProcessCpuPercent().getAsDouble())
-				: "avgProcessCpu=";
-		String gpuPart = summary.avgGpuPercent().isPresent()
-				? String.format(Locale.ROOT, "avgGpu=%.1f%%", summary.avgGpuPercent().getAsDouble())
-				: "avgGpu=";
-		String ramPart = summary.avgProcessRamMb().isPresent()
-				? String.format(Locale.ROOT, "avgProcessRamMb=%.1f", summary.avgProcessRamMb().getAsDouble())
-				: "avgProcessRamMb=";
-		String gpuMemPart = summary.avgGpuMemMb().isPresent()
-				? String.format(Locale.ROOT, "avgGpuMemMb=%.1f", summary.avgGpuMemMb().getAsDouble())
-				: "avgGpuMemMb=";
-		String line = String.format(Locale.ROOT,
-				"# usage %s; %s; %s; %s; samples=%d; intervalMs=%d%n",
-				cpuPart,
-				gpuPart,
-				ramPart,
-				gpuMemPart,
-				summary.sampleCount(),
-				summary.intervalMs());
-		try {
-			Files.writeString(outputFile, line, StandardCharsets.UTF_8,
-					StandardOpenOption.CREATE, StandardOpenOption.APPEND);
-		} catch (IOException ex) {
-			System.err.println("Failed to write benchmark usage summary: " + ex.getMessage());
-		}
-	}
-
-	private record UsageSummary(OptionalDouble avgProcessCpuPercent,
-	                            OptionalDouble avgGpuPercent,
-	                            OptionalDouble avgProcessRamMb,
-	                            OptionalDouble avgGpuMemMb,
-	                            int sampleCount,
-	                            int intervalMs) { }
-
-	private static final class UsageSampler implements Runnable {
-		private static final int DEFAULT_INTERVAL_MS = 1000;
-		private static final double BYTES_TO_MB = 1.0 / (1024.0 * 1024.0);
-		private final int intervalMs;
-		private final OperatingSystemMXBean osBean;
-		private final Thread thread;
-		private volatile boolean running = true;
-		private double cpuSum;
-		private double gpuSum;
-		private double processRamSumMb;
-		private double gpuMemSumMb;
-		private int cpuSamples;
-		private int gpuSamples;
-		private int processRamSamples;
-		private int gpuMemSamples;
-		private final long pid;
-		private final boolean isWindows;
-
-		private UsageSampler(int intervalMs, OperatingSystemMXBean osBean) {
-			this.intervalMs = Math.max(200, intervalMs);
-			this.osBean = osBean;
-			this.thread = new Thread(this, "benchmark-usage-sampler");
-			this.thread.setDaemon(true);
-			this.pid = ProcessHandle.current().pid();
-			String osName = System.getProperty("os.name", "");
-			this.isWindows = osName.toLowerCase(Locale.ROOT).contains("win");
-		}
-
-		static UsageSampler maybeStart() {
-			boolean enabled = Boolean.parseBoolean(System.getProperty("gfxlab.trackUsage", "true"));
-			if (!enabled) {
-				return null;
-			}
-			OperatingSystemMXBean osBean = null;
-			try {
-				var bean = ManagementFactory.getOperatingSystemMXBean();
-				if (bean instanceof OperatingSystemMXBean casted) {
-					osBean = casted;
-				}
-			} catch (Exception ignored) {
-			}
-			int intervalMs = parseInterval(System.getProperty("gfxlab.usageSampleMs"));
-			UsageSampler sampler = new UsageSampler(intervalMs, osBean);
-			sampler.thread.start();
-			return sampler;
-		}
-
-		UsageSummary stopAndGetSummary() {
-			running = false;
-			thread.interrupt();
-			try {
-				thread.join(TimeUnit.SECONDS.toMillis(2));
-			} catch (InterruptedException ignored) {
-				Thread.currentThread().interrupt();
-			}
-			OptionalDouble avgCpu = cpuSamples > 0 ? OptionalDouble.of(cpuSum / cpuSamples) : OptionalDouble.empty();
-			OptionalDouble avgGpu = gpuSamples > 0 ? OptionalDouble.of(gpuSum / gpuSamples) : OptionalDouble.empty();
-			OptionalDouble avgProcessRam = processRamSamples > 0 ? OptionalDouble.of(processRamSumMb / processRamSamples) : OptionalDouble.empty();
-			OptionalDouble avgGpuMem = gpuMemSamples > 0 ? OptionalDouble.of(gpuMemSumMb / gpuMemSamples) : OptionalDouble.empty();
-			int sampleCount = Math.max(Math.max(cpuSamples, gpuSamples), Math.max(processRamSamples, gpuMemSamples));
-			return new UsageSummary(avgCpu, avgGpu, avgProcessRam, avgGpuMem, sampleCount, intervalMs);
-		}
-
-		@Override
-		public void run() {
-			while (running) {
-				sampleOnce();
-				try {
-					Thread.sleep(intervalMs);
-				} catch (InterruptedException ex) {
-					Thread.currentThread().interrupt();
-				}
-			}
-		}
-
-		private void sampleOnce() {
-			if (osBean != null) {
-				double cpuLoad = osBean.getProcessCpuLoad();
-				if (cpuLoad >= 0.0) {
-					cpuSum += cpuLoad * 100.0;
-					cpuSamples++;
-				}
-			}
-			Double processRam = readProcessRamMb();
-			if (processRam != null && processRam >= 0.0) {
-				processRamSumMb += processRam;
-				processRamSamples++;
-			}
-
-			GpuStats gpuStats = readGpuStats();
-			if (gpuStats != null) {
-				if (gpuStats.utilization() != null && gpuStats.utilization() >= 0.0) {
-					gpuSum += gpuStats.utilization();
-					gpuSamples++;
-				}
-				if (gpuStats.memoryUsedMb() != null && gpuStats.memoryUsedMb() >= 0.0) {
-					gpuMemSumMb += gpuStats.memoryUsedMb();
-					gpuMemSamples++;
-				}
-			}
-		}
-
-		private Double readProcessRamMb() {
-			Long rssBytes = readProcessWorkingSetBytes();
-			if (rssBytes != null && rssBytes > 0) {
-				return rssBytes * BYTES_TO_MB;
-			}
-			if (osBean != null) {
-				long committed = osBean.getCommittedVirtualMemorySize();
-				if (committed > 0) {
-					return committed * BYTES_TO_MB;
-				}
-			}
-			return null;
-		}
-
-		private Long readProcessWorkingSetBytes() {
-			if (!isWindows) {
-				return null;
-			}
-			ProcessBuilder builder = new ProcessBuilder(
-					"powershell",
-					"-NoProfile",
-					"-Command",
-					"(Get-Process -Id " + pid + ").WorkingSet64");
-			builder.redirectErrorStream(true);
-			try {
-				Process process = builder.start();
-				String line = null;
-				try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream(), StandardCharsets.UTF_8))) {
-					line = reader.readLine();
-				}
-				process.waitFor(2, TimeUnit.SECONDS);
-				if (line == null) {
-					return null;
-				}
-				String trimmed = line.trim();
-				if (trimmed.isEmpty()) {
-					return null;
-				}
-				return Long.parseLong(trimmed);
-			} catch (Exception ignored) {
-				return null;
-			}
-		}
-
-		private static GpuStats readGpuStats() {
-			ProcessBuilder builder = new ProcessBuilder(
-					"nvidia-smi",
-					"--query-gpu=utilization.gpu,memory.used",
-					"--format=csv,noheader,nounits");
-			builder.redirectErrorStream(true);
-			try {
-				Process process = builder.start();
-				double utilSum = 0.0;
-				double memSum = 0.0;
-				int utilCount = 0;
-				int memCount = 0;
-				try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream(), StandardCharsets.UTF_8))) {
-					String line;
-					while ((line = reader.readLine()) != null) {
-						String trimmed = line.trim();
-						if (trimmed.isEmpty()) continue;
-						String[] parts = trimmed.split(",");
-						if (parts.length >= 1) {
-							Double util = parseDouble(parts[0]);
-							if (util != null) {
-								utilSum += util;
-								utilCount++;
-							}
-						}
-						if (parts.length >= 2) {
-							Double mem = parseDouble(parts[1]);
-							if (mem != null) {
-								memSum += mem;
-								memCount++;
-							}
-						}
-					}
-				}
-				process.waitFor(2, TimeUnit.SECONDS);
-				if (!process.isAlive() && process.exitValue() != 0 || (utilCount == 0 && memCount == 0)) {
-					return null;
-				}
-				Double utilAvg = utilCount > 0 ? utilSum / utilCount : null;
-				Double memAvg = memCount > 0 ? memSum / memCount : null;
-				return new GpuStats(utilAvg, memAvg);
-			} catch (Exception ignored) {
-				return null;
-			}
-		}
-
-		private static Double parseDouble(String raw) {
-			if (raw == null) {
-				return null;
-			}
-			String trimmed = raw.trim();
-			if (trimmed.isEmpty()) {
-				return null;
-			}
-			try {
-				return Double.parseDouble(trimmed);
-			} catch (NumberFormatException ex) {
-				return null;
-			}
-		}
-
-		private static int parseInterval(String raw) {
-			if (raw == null || raw.isBlank()) {
-				return DEFAULT_INTERVAL_MS;
-			}
-			try {
-				return Integer.parseInt(raw.trim());
-			} catch (NumberFormatException ex) {
-				return DEFAULT_INTERVAL_MS;
-			}
-		}
-	}
-
-	private record GpuStats(Double utilization, Double memoryUsedMb) { }
 }

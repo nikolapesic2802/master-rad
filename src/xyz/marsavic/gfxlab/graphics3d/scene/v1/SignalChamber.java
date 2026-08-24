@@ -106,11 +106,6 @@ public final class SignalChamber implements Scene {
 	}
 
 	@Override
-	public java.util.Collection<xyz.marsavic.gfxlab.graphics3d.Light> lights() {
-		return scene.lights();
-	}
-
-	@Override
 	public Color colorBackground() {
 		return scene.colorBackground();
 	}

@@ -1,44 +1,64 @@
 package xyz.marsavic.gfxlab.playground;
 
 import xyz.marsavic.gfxlab.benchmark.BenchmarkRecorder;
+import xyz.marsavic.gfxlab.gpu.GpuLaunchProvenance;
 
 import java.nio.file.Path;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.Arrays;
 import java.util.Locale;
-import java.util.stream.Stream;
 
 public final class BenchmarkRunner {
-	private static final int DEFAULT_FRAMES = 200;
-	private static final int DEFAULT_WARMUP_FRAMES = 20;
-	private static final int DEFAULT_WIDTH = 960;
-	private static final int DEFAULT_HEIGHT = 540;
-	private static final int DEFAULT_MAX_DEPTH = 12;
-	private static final int DEFAULT_PROGRESS_EVERY = 20;
-	private static final long DEFAULT_SEED = 0xA6A08E5C173D29FL;
 	private static final int BENCHMARK_FLUSH_EVERY = 20;
 
 	private BenchmarkRunner() {
 	}
 
 	public static void main(String[] args) {
-		int frames = args.length > 0 ? Integer.parseInt(args[0]) : readPositiveInt("gfxlab.frames", DEFAULT_FRAMES);
-		int warmupFrames = readNonNegativeInt("gfxlab.warmupFrames", DEFAULT_WARMUP_FRAMES);
-		int width = readPositiveInt("gfxlab.width", DEFAULT_WIDTH);
-		int height = readPositiveInt("gfxlab.height", DEFAULT_HEIGHT);
-		int maxDepth = readPositiveInt("gfxlab.maxDepth", DEFAULT_MAX_DEPTH);
-		int progressEvery = readPositiveInt("gfxlab.progressEvery", DEFAULT_PROGRESS_EVERY);
-		long seed = readLong("gfxlab.seed", DEFAULT_SEED);
-		String configuration = String.format(Locale.ROOT,
-				"width:%d,height:%d,maxDepth:%d,warmupFrames:%d,measuredFrames:%d,seed:0x%x,java:%s",
-				width, height, maxDepth, warmupFrames, frames, seed, System.getProperty("java.version", "unknown"));
-
+		if (args.length != 0) {
+			throw new IllegalArgumentException(
+					"BenchmarkRunner accepts no positional arguments; use gfxlab system properties.");
+		}
+		int frames = requiredPositiveInt("gfxlab.frames");
+		int warmupFrames = requiredNonNegativeInt("gfxlab.warmupFrames");
+		int width = requiredPositiveInt("gfxlab.width");
+		int height = requiredPositiveInt("gfxlab.height");
+		int maxDepth = requiredNonNegativeInt("gfxlab.maxDepth");
+		int progressEvery = requiredPositiveInt("gfxlab.progressEvery");
+		long seed = requiredLong("gfxlab.seed");
+		int bvhLeafSize = requiredPositiveInt("gfxlab.bvhLeafSize");
+		int benchmarkProcessId = requiredPositiveInt("gfxlab.benchmarkProcessId");
+		String phase = requiredProperty("gfxlab.benchmarkPhase");
+		if (!phase.equals("timing") && !phase.equals("counters")) {
+			throw new IllegalArgumentException(
+					"gfxlab.benchmarkPhase must be timing or counters.");
+		}
+		String baseConfiguration = String.format(Locale.ROOT,
+				"phase:%s,processId:%d,width:%d,height:%d,maxDepth:%d,bvhLeafSize:%d,warmupFrames:%d,measuredFrames:%d,seed:0x%x,java:%s",
+				phase, benchmarkProcessId, width, height, maxDepth, bvhLeafSize, warmupFrames, frames, seed,
+				System.getProperty("java.version", "unknown"));
 		RendererFactory.Version[] versions = configuredVersions();
 		SceneCatalog.ScenePreset[] scenes = configuredScenes();
 		int failures = 0;
 
 		for (RendererFactory.Version version : versions) {
 			for (SceneCatalog.ScenePreset scene : scenes) {
+				String configuration = baseConfiguration;
+				if (version.name().startsWith("GPU_")) {
+					int logicalSamples =
+							requiredPositiveInt("gfxlab.gpu.samplesPerFrame");
+					configuration += String.format(
+							Locale.ROOT,
+							",logicalSamplesPerFrame:%d,renderPixelsPerLaunch:%d,replayRaysPerLaunch:%d,samplesPerPhysicalKernel:%d,physicalKernelLaunchesPerLogicalFrame:%d,kernelNanosSemantics:%s",
+							logicalSamples,
+							GpuLaunchProvenance.renderPixelsPerLaunch(),
+							GpuLaunchProvenance.replayRaysPerLaunch(),
+							GpuLaunchProvenance.SAMPLES_PER_PHYSICAL_KERNEL,
+							GpuLaunchProvenance.physicalRenderLaunches(
+									width, height, logicalSamples),
+							GpuLaunchProvenance.KERNEL_NANOS_SEMANTICS);
+				}
 				System.out.printf("=== Running %s on scene %s (%d warm-up + %d measured frames, %dx%d) ===%n",
 						version.name(), scene.name(), warmupFrames, frames, width, height);
 				Path benchmarkFile = buildBenchmarkFile(scene.name().toLowerCase(Locale.ROOT), version.name().toLowerCase(Locale.ROOT));
@@ -66,102 +86,104 @@ public final class BenchmarkRunner {
 	private static Path buildBenchmarkFile(String sceneLabel, String rendererVersionLabel) {
 		String ts = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd-HHmmss-SSS"));
 		String filename = sceneLabel + "-" + rendererVersionLabel + "-" + ts + ".csv";
-		String directory = System.getProperty(
-				"gfxlab.benchmarkDir",
-				Path.of("benchmarks", "runs").toString()
-		);
-		return Path.of(directory).resolve(filename);
+		String configuredDirectory = requiredProperty("gfxlab.benchmarkDir");
+		return Path.of(configuredDirectory).resolve(filename);
 	}
 
 	private static RendererFactory.Version[] configuredVersions() {
-		String configured = firstNonBlank(System.getProperty("gfxlab.versions"), System.getenv("GFXLAB_VERSIONS"));
-		RendererFactory.Version[] defaults = RendererFactory.Version.values();
-		if (configured == null || configured.isBlank()) {
-			return defaults;
+		String configured = requiredProperty("gfxlab.versions");
+		String[] names = splitUnique(configured, "renderer version");
+		RendererFactory.Version[] result =
+				new RendererFactory.Version[names.length];
+		for (int index = 0; index < names.length; index++) {
+			try {
+				result[index] = RendererFactory.Version.valueOf(
+						names[index].toUpperCase(Locale.ROOT));
+			} catch (IllegalArgumentException error) {
+				throw new IllegalArgumentException(
+						"Unknown renderer version: " + names[index], error);
+			}
 		}
-		RendererFactory.Version[] parsed = Stream.of(configured.split(","))
-				.map(String::trim)
-				.filter(s -> !s.isEmpty())
-				.map(s -> s.toUpperCase(Locale.ROOT))
-				.flatMap(name -> {
-					try {
-						return Stream.of(RendererFactory.Version.valueOf(name));
-					} catch (IllegalArgumentException ex) {
-						System.err.printf("Unknown renderer version '%s', skipping%n", name);
-						return Stream.empty();
-					}
-				})
-				.toArray(RendererFactory.Version[]::new);
-		if (parsed.length == 0) {
-			throw new IllegalArgumentException("No valid renderer version was configured: " + configured);
-		}
-		return parsed;
+		return result;
 	}
 
 	private static SceneCatalog.ScenePreset[] configuredScenes() {
-		String configured = firstNonBlank(System.getProperty("gfxlab.scenes"), System.getenv("GFXLAB_SCENES"));
-		SceneCatalog.ScenePreset[] defaults = SceneCatalog.ScenePreset.values();
-		if (configured == null || configured.isBlank()) {
-			return defaults;
+		String configured = requiredProperty("gfxlab.scenes");
+		String[] names = splitUnique(configured, "scene preset");
+		SceneCatalog.ScenePreset[] result =
+				new SceneCatalog.ScenePreset[names.length];
+		for (int index = 0; index < names.length; index++) {
+			try {
+				result[index] = SceneCatalog.ScenePreset.valueOf(
+						names[index].toUpperCase(Locale.ROOT));
+			} catch (IllegalArgumentException error) {
+				throw new IllegalArgumentException(
+						"Unknown scene preset: " + names[index], error);
+			}
 		}
-		SceneCatalog.ScenePreset[] parsed = Stream.of(configured.split(","))
+		return result;
+	}
+
+	private static String[] splitUnique(String configured, String label) {
+		String[] values = Arrays.stream(configured.split(",", -1))
 				.map(String::trim)
-				.filter(s -> !s.isEmpty())
-				.map(s -> s.toUpperCase(Locale.ROOT))
-				.flatMap(name -> {
-					try {
-						return Stream.of(SceneCatalog.ScenePreset.valueOf(name));
-					} catch (IllegalArgumentException ex) {
-						System.err.printf("Unknown scene preset '%s', skipping%n", name);
-						return Stream.empty();
-					}
-				})
-				.toArray(SceneCatalog.ScenePreset[]::new);
-		if (parsed.length == 0) {
-			throw new IllegalArgumentException("No valid scene was configured: " + configured);
+				.toArray(String[]::new);
+		if (values.length == 0
+				|| Arrays.stream(values).anyMatch(String::isEmpty)
+				|| Arrays.stream(values).distinct().count() != values.length) {
+			throw new IllegalArgumentException(
+					"Configured " + label + " list is empty, malformed, or repeated: "
+							+ configured);
 		}
-		return parsed;
+		return values;
 	}
 
-	private static int readNonNegativeInt(String key, int fallback) {
-		String raw = System.getProperty(key);
-		if (raw == null || raw.isBlank()) return fallback;
+	private static String requiredProperty(String key) {
+		String value = System.getProperty(key);
+		if (value == null || value.isBlank()) {
+			throw new IllegalArgumentException(
+					"Missing required system property " + key + ".");
+		}
+		return value.trim();
+	}
+
+	private static int requiredNonNegativeInt(String key) {
+		String raw = requiredProperty(key);
 		try {
 			int value = Integer.parseInt(raw.trim());
-			return value >= 0 ? value : fallback;
+			if (value < 0) {
+				throw new IllegalArgumentException(
+						key + " must be nonnegative.");
+			}
+			return value;
 		} catch (NumberFormatException ex) {
-			return fallback;
+			throw new IllegalArgumentException(
+					key + " must be an integer.", ex);
 		}
 	}
 
-	private static int readPositiveInt(String key, int fallback) {
-		String raw = System.getProperty(key);
-		if (raw == null || raw.isBlank()) {
-			return fallback;
-		}
+	private static int requiredPositiveInt(String key) {
+		String raw = requiredProperty(key);
 		try {
 			int value = Integer.parseInt(raw.trim());
-			return value > 0 ? value : fallback;
+			if (value <= 0) {
+				throw new IllegalArgumentException(
+						key + " must be positive.");
+			}
+			return value;
 		} catch (NumberFormatException ex) {
-			return fallback;
+			throw new IllegalArgumentException(
+					key + " must be an integer.", ex);
 		}
 	}
 
-	private static long readLong(String key, long fallback) {
-		String raw = System.getProperty(key);
-		if (raw == null || raw.isBlank()) {
-			return fallback;
-		}
+	private static long requiredLong(String key) {
+		String raw = requiredProperty(key);
 		try {
 			return Long.decode(raw.trim());
 		} catch (NumberFormatException ex) {
-			return fallback;
+			throw new IllegalArgumentException(
+					key + " must be a signed 64-bit integer.", ex);
 		}
-	}
-
-	private static String firstNonBlank(String a, String b) {
-		if (a != null && !a.isBlank()) return a;
-		if (b != null && !b.isBlank()) return b;
-		return null;
 	}
 }

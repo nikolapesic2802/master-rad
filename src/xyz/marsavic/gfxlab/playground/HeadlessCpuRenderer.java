@@ -3,6 +3,8 @@ package xyz.marsavic.gfxlab.playground;
 import xyz.marsavic.geometry.Vector;
 import xyz.marsavic.gfxlab.Color;
 import xyz.marsavic.gfxlab.benchmark.BenchmarkRecorder;
+import xyz.marsavic.gfxlab.benchmark.SceneBenchmarkMetrics;
+import xyz.marsavic.gfxlab.benchmark.TraceCounters;
 import xyz.marsavic.gfxlab.graphics3d.Camera;
 import xyz.marsavic.gfxlab.graphics3d.Scene;
 import xyz.marsavic.gfxlab.graphics3d.raytracers.PathTracer;
@@ -34,26 +36,41 @@ final class HeadlessCpuRenderer {
 		this.seed = seed;
 	}
 
-	RenderedImage render(int frames, int progressEvery, BenchmarkRecorder recorder) {
-		return render(frames, 0, progressEvery, recorder);
-	}
-
 	RenderedImage render(int frames, int warmupFrames, int progressEvery, BenchmarkRecorder recorder) {
 		PathTracer tracer = new PathTracer(scene, camera, maxDepth);
 		double[] sums = new double[width * height * 3];
 		double[] warmupSums = warmupFrames > 0 ? new double[width * height * 3] : sums;
 		int totalFrames = Math.max(0, warmupFrames) + Math.max(0, frames);
+		boolean collectMetrics = Boolean.getBoolean("gfxlab.cpu.collectMetrics");
+		SceneBenchmarkMetrics sceneMetrics = recorder == null ? null : SceneBenchmarkMetrics.fromScene(scene);
+		if (recorder != null) {
+			recorder.setRunMetadata(new BenchmarkRecorder.RunMetadata(
+					sceneMetrics.sceneBytes(), 0L, (long) sums.length * Double.BYTES, null,
+					sceneMetrics.primitiveCount(), sceneMetrics.sphereCount(), sceneMetrics.boxCount(),
+					sceneMetrics.planeCount(), sceneMetrics.affineSphereCount(), sceneMetrics.affineBoxCount(),
+					sceneMetrics.materialCount(), 0, 0, 0, 0, null,
+					null, null, null, null, null, null, "mode=LINEAR"));
+		}
 
 		for (int frame = 0; frame < totalFrames; frame++) {
 			int frameIndex = frame;
 			boolean measured = frame >= warmupFrames;
+			TraceCounters counters = measured && recorder != null && collectMetrics ? new TraceCounters() : null;
+			tracer.setBenchmarkCounters(counters, sceneMetrics == null ? 0 : sceneMetrics.primitiveCount());
 			long frameStart = System.nanoTime();
 			double[] target = measured ? sums : warmupSums;
 			IntStream.range(0, height).parallel().forEach(y -> renderRow(tracer, target, frameIndex, y));
 			long totalNanos = System.nanoTime() - frameStart;
 			if (measured && recorder != null) {
-				recorder.record(1, width, height, totalNanos, null, null);
+				if (counters == null) {
+					recorder.record(1, width, height, totalNanos, null, null);
+				} else {
+					TraceCounters.Snapshot snapshot = counters.snapshot();
+					recorder.record(new BenchmarkRecorder.FrameMetrics(1, totalNanos, null, null, width, height,
+							snapshot.primaryRays(), snapshot.rays(), snapshot.primitiveTests(), snapshot.aabbTests()));
+				}
 			}
+			tracer.setBenchmarkCounters(null, 0);
 			int measuredFrame = frame - warmupFrames + 1;
 			if (measured && progressEvery > 0 && measuredFrame % progressEvery == 0) {
 				System.out.printf("  progress %d/%d%n", measuredFrame, frames);

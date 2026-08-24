@@ -304,37 +304,6 @@ public final class CityOfNightV1 implements Scene {
 		}
 	}
 
-	private void addVerticalStrips(List<Solid> solids,
-	                               SplittableRandom random,
-	                               double x,
-	                               double z,
-	                               double rx,
-	                               double rz,
-	                               double height,
-	                               Color glow) {
-		int strips = 3 + random.nextInt(2);
-		for (int strip = 0; strip < strips; strip++) {
-			double t = strips == 1 ? 0.5 : strip / (double) (strips - 1);
-			double xOffset = -rx * 0.72 + t * rx * 1.44;
-			double y = height * 0.50;
-			double h = height * (0.16 + random.nextDouble() * 0.18);
-			Color lit = glow.mul(random.nextDouble(1.22, 1.72));
-			addFrontBackPanel(solids, x + xOffset, y, z, 0.014, h, rz, 0.010, lit, true);
-			if (random.nextDouble() < 0.68) {
-				addSidePanel(solids,
-						x,
-						y,
-						z - rz * 0.45 + strip * (rz * 0.90 / Math.max(1, strips - 1)),
-						rx,
-						0.010,
-						h * 0.76,
-						0.015,
-						lit.mul(0.82),
-						true);
-			}
-		}
-	}
-
 	private void addCornerPattern(List<Solid> solids,
 	                              SplittableRandom random,
 	                              double x,
@@ -418,11 +387,6 @@ public final class CityOfNightV1 implements Scene {
 	@Override
 	public Solid solid() {
 		return scene.solid();
-	}
-
-	@Override
-	public java.util.Collection<xyz.marsavic.gfxlab.graphics3d.Light> lights() {
-		return scene.lights();
 	}
 
 	@Override

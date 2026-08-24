@@ -196,7 +196,6 @@ public class Color {
 
 
 	public Vec3 hsb() {
-		// TODO Test, this was never tested.
 		double brightness = Math.max(Math.max(r, g), b);
 		double delta = brightness - Math.min(Math.min(r, g), b);
 		double saturation = brightness == 0 ? 0 : delta / brightness;
