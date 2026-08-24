@@ -72,12 +72,17 @@ public final class SceneSupport {
 	}
 
 	public static Camera camera(Vec3 position, double pitch, double yaw) {
+		return camera(position, pitch, yaw, 0.0);
+	}
+
+	public static Camera camera(Vec3 position, double pitch, double yaw, double roll) {
 		return new TransformedCamera(
 				new Perspective(1.0 / 3.0),
 				Affine.IDENTITY
 						.then(Affine.translation(position))
 						.then(Affine.rotationAboutX(pitch))
 						.then(Affine.rotationAboutY(yaw))
+						.then(Affine.rotationAboutZ(roll))
 		);
 	}
 

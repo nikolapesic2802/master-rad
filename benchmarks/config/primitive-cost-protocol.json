@@ -1,0 +1,41 @@
+{
+  "schemaVersion": 1,
+  "study": "primitive-cost-calibration",
+  "gpu": {
+    "name": "NVIDIA GeForce RTX 3080",
+    "computeCapability": "compute_86",
+    "driverVersion": "610.47"
+  },
+  "contexts": 5,
+  "contextIsolation": "fresh JVM and CUDA context",
+  "operations": [
+    "sphere",
+    "box",
+    "affineSphere",
+    "affineBox",
+    "plane",
+    "nodeAabb",
+    "interiorTraversal"
+  ],
+  "workloadRecords": 4096,
+  "rayProfiles": 3,
+  "blocks": 256,
+  "threadsPerBlock": 256,
+  "iterationsPerThread": 2048,
+  "operationCopiesPerIteration": 8,
+  "sublaunchesPerObservation": 32,
+  "warmupPairsPerOperation": 4,
+  "measuredPairsPerOperation": 12,
+  "measurement": {
+    "setupSubtraction": true,
+    "localSphereControlPerOperation": true,
+    "setupOperationOrder": "balanced within every observation",
+    "operationSphereOrder": "balanced across observations",
+    "operationOrder": "rotated and reversed across context index"
+  },
+  "aggregation": {
+    "withinProfile": "median of 12 paired observations",
+    "withinContext": "median of 3 ray-profile ratios",
+    "final": "median of 5 context weights"
+  }
+}

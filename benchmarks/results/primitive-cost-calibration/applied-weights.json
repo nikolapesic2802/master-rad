@@ -1,0 +1,23 @@
+{
+  "schemaVersion": 1,
+  "study": "primitive-cost-calibration",
+  "producerCommit": "cf9080687ac3706f1cbc7f094750aea197713299",
+  "producerTree": "ebaa96a5bb504946f94ad9f07f899bcb6a64956a",
+  "calibrationIdentitySha256": "631fed4c77a8ca2de8966a084677a16e3787319319cef3a6a97948f37841ad72",
+  "evidenceManifestSha256": "bd9783dfb0071ac359ce6e02b36f3056145b63f61da37e89b61db88af50e7bab",
+  "device": {
+    "name": "NVIDIA GeForce RTX 3080",
+    "computeCapability": "compute_86",
+    "driverVersion": "610.47"
+  },
+  "contextCount": 5,
+  "weights": {
+    "sphere": 1.000000000,
+    "box": 1.288951704,
+    "affineSphere": 2.552743938,
+    "affineBox": 2.728115282,
+    "plane": 2.860319327,
+    "nodeAabb": 0.507189194,
+    "interiorTraversal": 1.275576713
+  }
+}
